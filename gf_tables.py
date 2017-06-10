@@ -56,7 +56,7 @@ if __name__ == "__main__":
     m = int(raw_input("Enter degree of GF field (m):").strip())
     g = int(raw_input("Enter coefficients of g(x):").strip())
 
-    num_elements = 2 ** m
+    order = 2 ** m
     
     # g(x) must be of degree m
     if ((g >> m) != 1):
@@ -71,25 +71,25 @@ if __name__ == "__main__":
         print gf_mult(a,b)
     """
     add_tbl = [
-        [gf_add(row, col) for col in xrange(num_elements)]
-        for row in xrange(num_elements)
+        [gf_add(row, col) for col in xrange(order)]
+        for row in xrange(order)
     ]
     print "Addition table:"
-    print_tbl(num_elements, num_elements, add_tbl)
+    print_tbl(order, order, add_tbl)
     print
 
     mult_tbl = [
-        [gf_mult(row, col, m, g) for col in xrange(num_elements)]
-        for row in xrange(num_elements)
+        [gf_mult(row, col, m, g) for col in xrange(order)]
+        for row in xrange(order)
     ]
     print "Multiplication table:"
-    print_tbl(num_elements, num_elements, mult_tbl)
+    print_tbl(order, order, mult_tbl)
     print
 
     mult_inv = [0]
-    for r in xrange(1, num_elements):
+    for r in xrange(1, order):
         mult_inv.append(mult_tbl[r].index(1))
     print "Multiplicative inverses:"
-    for i in xrange(1, num_elements):
+    for i in xrange(1, order):
         print '{:02x}: {:02x}'.format(i, mult_inv[i])
 
