@@ -1,3 +1,5 @@
+from gf_base2 import gf2
+
 def print_tbl(rows, cols, val):
     """Prints a table of values given in val.
     
@@ -17,36 +19,6 @@ def print_tbl(rows, cols, val):
             print format(val[r][c], '02x'),
         print
 
-def gf_add(x, y):
-    return x ^ y
-
-def gf_mult(x, y, m, g):
-    """Multiplication in GF(2^m)
-
-    x: operand
-    y: operand
-    m: degree of GF
-    g: generating polynomial used for reduction. Must be degree m.
-    """
-    prod = 0
-
-    # Multiply
-    while x:
-        if x & 1:
-            prod ^= y
-        x >>= 1
-        y <<= 1
-
-    # Reduce by g(x)
-    g_msb = 1 << m
-
-    for i in xrange(m-2, -1, -1):
-        if (prod & g_msb << i):
-            prod ^= g << i
-
-    return prod
-
-
 if __name__ == "__main__":
     desc = ('This program calculates the addition and multiplication tables '
             'for GF(2^m) with the given generating polynomial, g(x). e.g., '
@@ -58,10 +30,7 @@ if __name__ == "__main__":
 
     order = 2 ** m
     
-    # g(x) must be of degree m
-    if ((g >> m) != 1):
-        print 'Incorrect g(x)={} for degree m={}:'.format(g, m)
-        exit(1)
+    gf = gf2(m, g)
 
     """
     # Quick heck for doing mult in CLI
@@ -71,7 +40,7 @@ if __name__ == "__main__":
         print gf_mult(a,b)
     """
     add_tbl = [
-        [gf_add(row, col) for col in xrange(order)]
+        [gf.add(row, col) for col in xrange(order)]
         for row in xrange(order)
     ]
     print "Addition table:"
@@ -79,7 +48,7 @@ if __name__ == "__main__":
     print
 
     mult_tbl = [
-        [gf_mult(row, col, m, g) for col in xrange(order)]
+        [gf.mult(row, col) for col in xrange(order)]
         for row in xrange(order)
     ]
     print "Multiplication table:"
