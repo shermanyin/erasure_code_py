@@ -17,12 +17,35 @@ class gf2:
 
         self.m = m
         self.g = g
+        self.order = 2 ** m
 
+        # Using log and exp tables for calculations is faster, but would require
+        # the knowledge of a generator for the particular m.  Here we just
+        # calculate the multiplication table manually.
+        self.mult_tbl = [
+            [self.long_mult(row, col) for col in xrange(self.order)]
+            for row in xrange(self.order)
+        ]
+
+        # Multiplicative inverses.  Inverse for 0 is undefined but we record a
+        # 'None' here to make indexing more intuitive.
+        self.mult_inv_tbl = [ None ]
+        for row in xrange(1, self.order):
+            self.mult_inv_tbl.append(self.mult_tbl[row].index(1))
 
     def add(self, x, y):
         return x ^ y
 
     def mult(self, x, y):
+        return self.mult_tbl[x][y]
+
+    def add_inv(self, x):
+        return x
+
+    def mult_inv(self, x):
+        return self.mult_inv_tbl[x]
+
+    def long_mult(self, x, y):
         prod = 0
 
         # Multiply

@@ -47,18 +47,11 @@ if __name__ == "__main__":
     print_tbl(order, order, add_tbl)
     print
 
-    mult_tbl = [
-        [gf.mult(row, col) for col in xrange(order)]
-        for row in xrange(order)
-    ]
     print "Multiplication table:"
-    print_tbl(order, order, mult_tbl)
+    print_tbl(order, order, gf.mult_tbl)
     print
 
-    mult_inv = [0]
-    for r in xrange(1, order):
-        mult_inv.append(mult_tbl[r].index(1))
     print "Multiplicative inverses:"
     for i in xrange(1, order):
-        print '{:02x}: {:02x}'.format(i, mult_inv[i])
+        print '{:02x}: {:02x}'.format(i, gf.mult_inv_tbl[i])
 
