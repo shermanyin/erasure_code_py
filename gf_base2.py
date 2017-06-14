@@ -8,7 +8,7 @@ class gf2:
            Highest degree must be m.
         """
         # g(x) must be of degree m
-        if ((g >> m) != 1):
+        if (g >> m) != 1:
             msg = (
                 'Incorrect value for g(x) = {}.  Highest degree of g(x) must '
                 'be equal to m ({}). Initialization failed.'.format(g, m)
@@ -33,17 +33,25 @@ class gf2:
         for row in xrange(1, self.order):
             self.mult_inv_tbl.append(self.mult_tbl[row].index(1))
 
-    def add(self, x, y):
+    @staticmethod
+    def add(x, y):
         return x ^ y
+
+    @staticmethod
+    def add_inv(x):
+        return x
 
     def mult(self, x, y):
         return self.mult_tbl[x][y]
 
-    def add_inv(self, x):
-        return x
-
     def mult_inv(self, x):
         return self.mult_inv_tbl[x]
+
+    def pow(self, x, y):
+        res = 1
+        for i in xrange(y):
+            res = self.mult(res, x)
+        return res
 
     def long_mult(self, x, y):
         prod = 0
@@ -59,7 +67,7 @@ class gf2:
         g_msb = 1 << self.m
 
         for i in xrange(self.m - 2, -1, -1):
-            if (prod & g_msb << i):
+            if prod & g_msb << i:
                 prod ^= self.g << i
 
         return prod
