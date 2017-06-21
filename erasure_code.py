@@ -16,7 +16,9 @@ class ErasureCode:
         # Using GF(2^8) with 0x11b as g(x)
         self.gf = gf2(8, 283)
 
-        self.encoding_matrix = self.rs_matrix_gen()
+        # self.encoding_matrix = self.rs_matrix_gen()
+        self.encoding_matrix = self.cauchy_matrix_gen()
+        # self.encoding_matrix = self.vandermonde_matrix_gen()
 
     @staticmethod
     def identity_matrix_gen(n):
@@ -26,6 +28,24 @@ class ErasureCode:
             res.append(row)
         return res
 
+    def cauchy_matrix_gen(self):
+        """Generate a Cauchy Matrix to be used as the ecoding matrix
+
+        According t Intel's ISA-L code, this matrix is the identity matrix
+        followed by an m by k matrix where the values are
+            1/(i + j)^-1
+            for
+        """
+        # Identity matrix portion
+        mat = self.identity_matrix_gen(self.k)
+
+        # Remaining portion
+        for r in xrange(self.p):
+            row = [self.gf.mult_inv(self.gf.add(r + self.k, c)) for c in xrange(self.k)]
+            mat.append(row)
+
+        return mat
+
     def rs_matrix_gen(self):
         """Generate an RS matrix to be used as the encoding matrix.
         
@@ -34,7 +54,7 @@ class ErasureCode:
             2 ** (r-k * c)
         for r:{k,n-1}, c:{0,k-1}.
 
-        Note there is a descrepency between the header description and code in
+        Note there is a discrepancy between the header description and code in
         their library.
 
         Returns an n x k matrix
@@ -49,6 +69,45 @@ class ErasureCode:
 
         return mat
 
+    def vandermonde_matrix_gen(self):
+        mat = []
+
+        # Create Vandermonde matrix
+        for r in xrange(self.n):
+            row = [self.gf.pow(r, c) for c in xrange(self.k)]
+            mat.append(row)
+
+        # Transform matrix to get identity matrix for the top k rows
+        for i in xrange(self.k):
+            # Find another row if pivot is 0
+            if mat[i][i] == 0:
+                for j in xrange(i + 1, self.n):
+                    if mat[j][i] != 0:
+                        self.matrix_swap_rows(mat, i, j)
+                        break
+
+            # If there are no rows with non-zero element in ith column
+            if mat[i][i] == 0:
+                print 'Cannot generate Vandermonde matrix:'
+                self.matrix_print(mat)
+                raise ValueError
+
+            # Scale row so pivot is 1
+            inv = self.gf.mult_inv(mat[i][i])
+            mat[i] = [self.gf.mult(c, inv) for c in mat[i]]
+
+            # Zero out the ith column in other rows up to k-1 row
+            for j in xrange(self.k):
+                # Skip the current row
+                if j == i:
+                    continue
+
+                scale = mat[j][i]
+                mat[j] = [self.gf.add(self.gf.mult(scale, e_i), e_j) for e_i, e_j
+                           in zip(mat[i], mat[j])]
+
+        return mat
+
     @staticmethod
     def matrix_print(mat):
         """Prints the given matrix
@@ -59,13 +118,16 @@ class ErasureCode:
         cols = len(mat[0])
 
         # Print column header
-        print '  ',
+        print '    ',
         for c in xrange(cols):
             print format(c, '02x'),
         print
+        print '   ',
+        print '-' * cols * 3
 
         for r in xrange(rows):
-            print format(r, '02x'),
+            print '{:02x} |'.format(r),
+            #format(r, '02x'),
             for c in xrange(cols):
                 print format(mat[r][c], '02x'),
             print
@@ -209,6 +271,10 @@ class ErasureCode:
                 if num_bytes == self.k:
                     break
 
+        # No decoding needed if original data is available
+        if i == (self.k - 1):
+            return data[:self.k]
+
         if num_bytes < self.k:
             msg = (
                 'Not enough received bytes to reconstruct original data. '
@@ -228,14 +294,12 @@ class ErasureCode:
 
 
 if __name__ == '__main__':
-    #k = int(raw_input("Enter number of source bytes to encode (k): ").strip())
-    #p = int(raw_input("Enter number of parity bytes to generate (m): ").strip())
 
-    k = 4
+    k = 16
     p = 4
     ec = ErasureCode(k, p)
-    #ec.matrix_print(ec.encoding_matrix)
-    a = ec.encode([11, 22, 33, 44])
-    print a
-    b = ec.decode([None, 22, 33, 44, None, 216])
-    print b
+    ec.matrix_print(ec.encoding_matrix)
+    #a = ec.encode([11, 22, 33, 44])
+    #print a
+    #b = ec.decode([111, None, 33, None, None, 151])
+    #print b
