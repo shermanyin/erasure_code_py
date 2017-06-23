@@ -1,18 +1,25 @@
 from random import randint, shuffle
-import sys
 from unittest import TestCase
-
 from erasure_code import ErasureCode
 
+# Number of random test cases
 num_tests = 1000
 
 
 class TestExhaustiveErasureCode(TestCase):
+    def test_k1p1(self):
+        self.verify_decode(1, 1)
+
     def test_k2p1(self):
         self.verify_decode(2, 1)
 
     def test_k4p1(self):
         self.verify_decode(4, 1)
+
+    def test_range(self):
+        for k in xrange(2, 21, 2):
+            for p in xrange (1, 5):
+                self.verify_decode(k, p)
 
     @staticmethod
     def combination(n, k):
@@ -47,53 +54,50 @@ class TestExhaustiveErasureCode(TestCase):
         print 'Testing k = {}, p = {}...'.format(k, p)
 
         ec = ErasureCode(k, p)
-        n = k + p
         passed = 0
         inv_err = 0
         result_err = 0
         iter = 0
 
-        # Generate all combinations of k bytes data
-        for i in xrange(2 ** (k * 8)):
-            data_in = []
+        # Generate k random data_in bytes
+        data_in = [randint(0, 255) for _ in xrange(k)]
 
-            # Split the bytes
-            for byte in xrange(k):
-                data_in.insert(0, i >> (8 * byte) & 0xff)
+        # Generate parity bytes
+        parity = ec.encode(data_in)
 
-            # Generate parity bytes
-            parity = ec.encode(data_in)
+        data_out = data_in + parity
 
-            data_out = data_in + parity
+        # Check all possible number of lost bytes (1..p)
+        for num_loss_bytes in xrange(1, p + 1):
 
-            # Check all possible number of lost bytes (1..p)
-            for num_loss_bytes in xrange(1, p + 1):
+            # For each combination
+            for comb in self.combination(k + p, num_loss_bytes):
+                # Make a copy of data_out
+                data_received = data_out[:]
 
-                # For each combination
-                for comb in self.combination(n, num_loss_bytes):
-                    # Make a copy of data_out
-                    data_received = data_out[:]
+                # Set each loss byte to 'None'
+                for idx in comb:
+                    data_received[idx] = None
 
-                    # Set each loss byte to 'None'
-                    for idx in comb:
-                        data_received[idx] = None
+                try:
+                    iter += 1
+                    recover = ec.decode(data_received)
 
-                    try:
-                        iter += 1
-                        recover = ec.decode(data_received)
-                    except ValueError:
-                        inv_err += 1
-                        continue
+                except ValueError:
+                    inv_err += 1
+                    continue
 
-                    if recover != data_in:
-                        print 'Input was {} but recovered {}'.format(data_in, recover)
-                        result_err += 1
-                        continue
+                if recover != data_in:
+                    msg = 'Input was {} but recovered {}'
+                    print msg.format(data_in, recover)
+                    result_err += 1
+                    continue
 
-                    passed += 1
+                passed += 1
 
-        print 'Completed {} iterations.'.format(iter)
-        print '{} passed, {} inv_err, {} result_err'.format(passed, inv_err, result_err)
+        msg = 'Completed {} iterations. {} passed, {} inv_err, {} result_err'
+
+        print msg.format(iter, passed, inv_err, result_err)
 
         if inv_err or result_err:
             self.fail()
