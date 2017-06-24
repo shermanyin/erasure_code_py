@@ -1,15 +1,14 @@
-from random import randint, shuffle
-from unittest import TestCase
-from erasure_code import ErasureCode
+import erasure_code
+import random
 import sys
 import time
-
+import unittest
 
 # Number of random test cases
 num_tests = 1000
 
 
-class TestExhaustiveErasureCode(TestCase):
+class TestExhaustiveErasureCode(unittest.TestCase):
     def test_k1p1(self):
         self.verify_decode(1, 1)
 
@@ -74,14 +73,14 @@ class TestExhaustiveErasureCode(TestCase):
         print 'Testing k = {}, p = {}...'.format(k, p)
 
         start_time = time.time()
-        ec = ErasureCode(k, p)
+        ec = erasure_code.ErasureCode(k, p)
         passed = 0
         inv_err = 0
         result_err = 0
         iter = 0
 
         # Generate k random data_in bytes
-        data_in = [randint(0, 255) for _ in xrange(k)]
+        data_in = [random.randint(0, 255) for _ in xrange(k)]
 
         # Generate parity bytes
         parity = ec.encode(data_in)
@@ -131,7 +130,7 @@ class TestExhaustiveErasureCode(TestCase):
             self.fail()
 
 
-class TestRandomErasureCode(TestCase):
+class TestRandomErasureCode(unittest.TestCase):
 
     def test_k4p2(self):
         self.verify_decode(4, 2, 1000)
@@ -178,14 +177,14 @@ class TestRandomErasureCode(TestCase):
     def verify_decode(self, k, p, cycles):
         print 'Testing k = {}, p = {}, {} times...'.format(k, p, cycles)
 
-        ec = ErasureCode(k, p)
+        ec = erasure_code.ErasureCode(k, p)
         passed = 0
         inv_err = 0
         result_err = 0
 
         for i in xrange(num_tests):
             # Generate k random data_in bytes
-            data_in = [randint(0, 255) for _ in xrange(k)]
+            data_in = [random.randint(0, 255) for _ in xrange(k)]
 
             # Generate parity bytes
             parity = ec.encode(data_in)
@@ -194,7 +193,7 @@ class TestRandomErasureCode(TestCase):
 
             # Loose p random bytes
             idx = range(k + p)
-            shuffle(idx)
+            random.shuffle(idx)
             for j in xrange(p):
                 data_out[idx[j]] = None
 
