@@ -1,6 +1,9 @@
 from random import randint, shuffle
 from unittest import TestCase
 from erasure_code import ErasureCode
+import sys
+import time
+
 
 # Number of random test cases
 num_tests = 1000
@@ -16,14 +19,31 @@ class TestExhaustiveErasureCode(TestCase):
     def test_k4p1(self):
         self.verify_decode(4, 1)
 
+    def test_k32p8(self):
+        self.verify_decode(32, 8)
+
     def test_range(self):
         for k in xrange(2, 21, 2):
-            for p in xrange (1, 5):
+            for p in xrange(1, 5):
                 self.verify_decode(k, p)
 
     @staticmethod
+    def num_combination(n, r):
+        """Returns number of combinations """
+        top = 1
+        bottom = 1
+
+        for i in xrange(n, n-r, -1):
+            top *= i
+
+        for i in xrange(2, r+1):
+            bottom *= i
+
+        return top/bottom
+
+    @staticmethod
     def combination(n, k):
-        """ N Choose K """
+        """Returns all combinations of N Choose K """
         def construct_comb(res, idx):
 
             # if the res list has k elements, we've found a combination
@@ -53,6 +73,7 @@ class TestExhaustiveErasureCode(TestCase):
     def verify_decode(self, k, p):
         print 'Testing k = {}, p = {}...'.format(k, p)
 
+        start_time = time.time()
         ec = ErasureCode(k, p)
         passed = 0
         inv_err = 0
@@ -68,7 +89,9 @@ class TestExhaustiveErasureCode(TestCase):
         data_out = data_in + parity
 
         # Check all possible number of lost bytes (1..p)
-        for num_loss_bytes in xrange(1, p + 1):
+        #for num_loss_bytes in xrange(1, p + 1):
+        for num_loss_bytes in xrange(p, p + 1):
+            num_comb = self.num_combination(k + p, num_loss_bytes)
 
             # For each combination
             for comb in self.combination(k + p, num_loss_bytes):
@@ -94,6 +117,11 @@ class TestExhaustiveErasureCode(TestCase):
                     continue
 
                 passed += 1
+
+                if not iter % 100:
+                    msg = '\r{} of {} ({}%), time elasped = {:.3f}s'
+                    print msg.format(iter, num_comb, iter / num_comb * 100, time.time()-start_time),
+                    sys.stdout.flush()
 
         msg = 'Completed {} iterations. {} passed, {} inv_err, {} result_err'
 
